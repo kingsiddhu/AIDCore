@@ -1,0 +1,17 @@
+query
+  ↓
+toolget
+  ↓
+valid
+  ↓
+[invalid] → revert → toolget
+  ↓
+[valid]
+  ↓
+checkpoint
+  ↓
+executor
+  ↓
+update memory
+  ↓
+loop → / end
