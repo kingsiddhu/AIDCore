@@ -4,13 +4,33 @@ if __name__ =="__main__":
 else:
     import Agent.debug
 
-def listFiles(path="./"):
-    dirs=os.listdir(path)
+def list_files(dir_path="./"):
+    dirs=os.listdir(dir_path)
     Agent.debug.logger(dirs)
     return dirs
 
 
+def read_file(file_path="hello.txt", open_mode = "r"):
+    if not os.path.abspath(os.curdir) in os.path.abspath(file_path):
+        raise EOFError
+    if not os.path.exists(file_path):
+        raise EOFError
+    elif not os.path.isfile(file_path):
+        raise EOFError
+    else:
+        with open(file_path, open_mode) as f:
+            return f.read()
 
+
+def write_file(content,file_path="hello.txt", open_mode = "r"):
+    if not os.path.abspath(os.curdir) in os.path.abspath(file_path):
+        raise EOFError
+    elif not os.path.isfile(file_path):
+        raise EOFError
+    else:
+        with open(file_path, open_mode) as f:
+            return f.write(content)
+    
 
 
 

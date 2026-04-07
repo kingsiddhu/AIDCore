@@ -11,47 +11,62 @@ class AgentState(TypedDict):
     valid : bool
     error : bool
     action: dict
-    content : str
+    messages : list  #memory
     result: str
+    role : str
 
 mainLLM = OllamaLLM(model="llama3.1:8b")
+#mainLLM = OllamaLLM(model="qwen3.5:9b")
+#mainLLM = OllamaLLM(model="mikestaub/apriel-1.5:15b-thinker-q4_k_m")
 
 #Streaming text thingy
-async def getResp(text, model):
+async def getResp(data, model):
     result = ""
-    async for chunk in model.astream(text):
+    async for chunk in model.astream(data):
         print(chunk, end="", flush=True)
         result += chunk
+    print()
     return result
 
-getResp(Agent.INIT_PROMPT, mainLLM)
+#getResp(Agent.INIT_PROMPT, mainLLM)
 
 # Nodes
 async def valid(state):
     prompt = Agent.VALID_PROMPT
 
 async def init(state):
-    prompt = Agent.INIT_PROMPT
-    res = await getResp(prompt, mainLLM)
+    starting_mem = [{"role": "system", "content": Agent.INIT_PROMPT}]
     return {
         "valid": False,
-        "error": ""
+        "error": "",
+        "messages" : starting_mem
     }
 
 
 async def display(state):
-    AgentState.error = False
-    prompt = Agent.SYSTEM_PROMPTS.DISPLAY_PROMPT+f"{state['input']}"
-    res = await getResp(prompt, mainLLM)
+    prompt = f"{state['input']}"
+
+    state["messages"].append({"role": "system", "content": Agent.DISPLAY_PROMPT})
+    state["messages"].append({"role": state["role"], "content": prompt})
+    res = await getResp(state["messages"], mainLLM)
+
+    state["messages"].append({"role": "assistant", "content": res})
+
     #Agent.debug.logger(res)
-    return {"result": res}
+    return {"result": res, "messages": state["messages"], "error": False}
 
 async def toolsToUse(state):
-    prompt = Agent.TOOLS_TO_USE + state["input"]
-    res = await getResp(prompt, mainLLM)
+    prompt = state["input"]
+    state["messages"].append({"role": "system", "content": Agent.TOOLS_TO_USE})
+    state["messages"].append({"role": "user", "content": prompt})
+    res = await getResp(state["messages"], mainLLM)
 
+    state["messages"].append({"role": "system", "content": res})
     #Agent.debug.logger(res)
-    return {"action": Agent.parsejson.parse_response(res)}
+    return {
+        #"result": res,
+        "action": Agent.parsejson.parse_response(res), "messages": state["messages"]}
+
 
 async def valid_tools(state):
 
@@ -61,11 +76,16 @@ async def is_valid(state):
     if state["valid"]:
         return 'hellyea'
     return "no"
+
+
 async def toolsRun(state):
     Agent.debug.logger(state)
     data = Agent.parsejson.parse_response(state["action"])
-    getattr(Agent.tools, data["function_name"])(**data["kwargs"])
-    return {"input": str(data)}
+    func_name =  data["function_name"]
+
+    content = getattr(Agent.tools,func_name)(**data["kwargs"])
+
+    return {"input": str(content), "role" : "system"}
 
 def should_continue(state):
     if state["result"].endswith("END"):
@@ -73,13 +93,14 @@ def should_continue(state):
     AgentState.error = True
     return "continue"
 # Graph
+
 builder = StateGraph(AgentState)
 
 builder.add_node("init", init)
 builder.add_node("query", display)
 builder.add_node("toolget", toolsToUse)
 builder.add_node("valid", valid_tools)
-builder.add_node("executor", toolsRun)
+builder.add_node("executioner", toolsRun)
 
 builder.set_entry_point("init")
 builder.add_edge("init","query")
@@ -88,16 +109,16 @@ builder.add_edge("toolget", "valid")
 builder.add_conditional_edges(
     "valid",
     is_valid,{
-        "hellyea" : "executor",
+        "hellyea" : "executioner",
         "no" : "query"
     }
 
 )
 
-#builder.add_edge("executor", END)
+#builder.add_edge("executioner", END)
 
 builder.add_conditional_edges(
-    "executor",
+    "executioner",
     should_continue,
     {
         "continue": "query",
@@ -109,5 +130,5 @@ builder.add_conditional_edges(
 graph = builder.compile()
 
 # Run
-output = asyncio.run(graph.ainvoke({"input": "tell me what files are there in the directory './'"}))
+output = asyncio.run(graph.ainvoke({"input": "tell me what files are there in the directory './'", "role": "user"}))
 Agent.debug.print_dict(output)
