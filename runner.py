@@ -42,6 +42,17 @@ async def getResp(data, model):
     print()
     return result
 
+def clear_system_prompts(data:list):
+    n = []
+    for i in data:
+        if i["role"] == "system":
+            if i["content"].startswith(Agent.INIT_PROMPT[:20]):
+                n.append(i)
+        else:
+            n.append(i)
+    return n
+
+
 #getResp(Agent.INIT_PROMPT, mainLLM)
 
 # Nodes
@@ -57,7 +68,8 @@ async def init(state):
 
 async def assistant(state):
     prompt = f"{state['input']}"
-
+    state["messages"] = clear_system_prompts(state['messages'])
+        
     state["messages"].append({"role": "system", "content": Agent.DISPLAY_PROMPT})
     state["messages"].append({"role": state["role"], "content": prompt})
 
@@ -73,7 +85,8 @@ async def assistant(state):
 
 async def toolsToUse(state):
     #checkpoint = state["messages"].copy()
-
+    
+    clear_system_prompts(state['messages'])
     state["messages"].append({"role": "system", "content": Agent.TOOLS_TO_USE})
 
     res = await getResp(state["messages"], MODEL_MAP["system_tool"])
@@ -127,7 +140,7 @@ def should_continue(state):
     if state["result"].endswith("END"):
         return "end"
     
-    if len(state["messages"]) > 20:
+    if len(state["messages"]) > 10:
         return "end"
 
     builder.state_schema.error = True
@@ -144,7 +157,15 @@ builder.add_node("executioner", toolsRun) #Running the tool
 
 builder.set_entry_point("init")
 builder.add_edge("init","assistant")
-builder.add_edge("assistant", "toolget")
+builder.add_conditional_edges(
+    "assistant",
+    should_continue, {
+        "continue": "toolget",
+        "end": END
+    }
+)
+
+#builder.add_edge("assistant", "toolget")
 builder.add_edge("toolget", "executioner")
 
 """builder.add_conditional_edges(

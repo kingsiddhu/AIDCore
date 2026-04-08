@@ -139,6 +139,7 @@ If the task involves filesystem data:
 - Plan to call the appropriate tool in the next step
 
 If sufficient information is available, conclude the task.
+If the task was successful, that is all necessary tools are invoked, all data is received and worked with, End the the convo by ending responce with END. Please do this.
 
 Do not use any format given for this result. Speak in human language.
 """
