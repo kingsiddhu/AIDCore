@@ -7,6 +7,7 @@ else:
 def list_files(dir_path="./"):
     dirs=os.listdir(dir_path)
     Agent.debug.logger(dirs)
+
     return dirs
 
 
@@ -22,7 +23,7 @@ def read_file(file_path="hello.txt", open_mode = "r"):
             return f.read()
 
 
-def write_file(content,file_path="hello.txt", open_mode = "r"):
+def write_file(content: str = "",file_path="hello.txt", open_mode = "r"):
     if not os.path.abspath(os.curdir) in os.path.abspath(file_path):
         raise EOFError
     elif not os.path.isfile(file_path):
@@ -33,13 +34,11 @@ def write_file(content,file_path="hello.txt", open_mode = "r"):
     
 
 
-
-
-
 def get_funcs():
     import inspect
     global funcs, loc
     funs_in_tools = []
+    print(funcs)
     for i in funcs:
         sig = inspect.signature(loc[i])
         all_params = dict(sig.parameters)
@@ -78,10 +77,13 @@ try:
     funcs.remove("Agent.debug")
 except:
     pass
-
+try:
+    funcs.remove("Agent")
+except:
+    pass
 loc = locals()
 if __name__ == "__main__":
-    import debug
+    import debug, json
     print(funcs)
-    print(get_funcs())
+    print(json.dumps(get_funcs(), indent=4))
     debug.logger(get_funcs())

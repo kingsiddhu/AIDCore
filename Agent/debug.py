@@ -31,7 +31,8 @@ def logger(data):
     else:
         print(COL_MAG+data+RESET)
     print()
-
+def checkpoint(data):
+    print(COL_GRE+data+RESET)
 def print_dict(dic:dict, level=1):
     print("    "*(level-1) + "{")
     for i in dic.keys():

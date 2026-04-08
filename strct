@@ -15,3 +15,33 @@ executor
 update memory
   ↓
 loop → / end
+
+
+
+                ┌─────────────────────┐
+                │  User Input         │
+                └────────┬────────────┘
+                         ↓
+                ┌─────────────────────┐
+                │  Router (fast LLM)   │
+                │  - classify task     │
+                │  - choose tool/model │
+                └────────┬────────────┘
+                         ↓
+        ┌────────────────────────────────────┐
+        │         Task Dispatcher            │
+        │ (LangGraph conditional routing)    │
+        └───────┬───────────────┬────────────┘
+                ↓               ↓
+        ┌──────────────┐ ┌──────────────┐
+        │ Music Agent  │ │ Coding Agent  │
+        │ (tools)      │ │ (sandbox)    │
+        └──────────────┘ └──────────────┘
+                ↓               ↓
+        ┌──────────────────────────────┐
+        │ General / Reasoning Model     │
+        │ (Qwen / Mixtral / DeepSeek)  │
+        └──────────────┘
+
+
+Use one of 'human', 'user', 'ai', 'assistant', 'function', 'tool', 'system', or 'developer'.

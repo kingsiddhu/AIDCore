@@ -1,3 +1,3 @@
-from Agent.SYSTEM_PROMPTS import *
-import Agent.debug, Agent.tools, Agent.parsejson
+from . import debug, tools, parsejson
+from .SYSTEM_PROMPTS import *
 
