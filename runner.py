@@ -46,7 +46,7 @@ def clear_system_prompts(data:list):
     n = []
     for i in data:
         if i["role"] == "system":
-            if i["content"].startswith(Agent.INIT_PROMPT[:20]):
+            if i["content"].startswith(Agent.INIT_PROMPT[:20]) or i["content"].startswith("TOOL RESULT"):
                 n.append(i)
         else:
             n.append(i)
@@ -68,10 +68,15 @@ async def init(state):
 
 async def assistant(state):
     prompt = f"{state['input']}"
-    state["messages"] = clear_system_prompts(state['messages'])
-        
-    state["messages"].append({"role": "system", "content": Agent.DISPLAY_PROMPT})
-    state["messages"].append({"role": state["role"], "content": prompt})
+
+    state["messages"] = clear_system_prompts(state["messages"])
+
+    state["messages"].append({
+        "role": "system",
+        "content": "You are currently in the ASSISTANT phase."
+        })
+    
+    state["messages"].append({"role": "user", "content": prompt})
 
     
     res = await getResp(state["messages"], MODEL_MAP["general"])
@@ -86,9 +91,11 @@ async def assistant(state):
 async def toolsToUse(state):
     #checkpoint = state["messages"].copy()
     
-    clear_system_prompts(state['messages'])
-    state["messages"].append({"role": "system", "content": Agent.TOOLS_TO_USE})
-
+    state["messages"] = clear_system_prompts(state["messages"])
+    state["messages"].append({
+        "role": "system",
+        "content": "You are currently in the TOOL_SELECTION phase. here are the available tools: "+ json.dumps(Agent.tools.get_funcs(), indent=2)
+        })
     res = await getResp(state["messages"], MODEL_MAP["system_tool"])
 
     res = Agent.parsejson.extract_json(res)
@@ -104,17 +111,6 @@ async def toolsToUse(state):
         "messages": state["messages"]
         }
 
-"""
-async def valid_tools(state):
-
-    return {"valid": "hellyea"}
-
-async def is_valid(state):
-    if state["valid"]:
-        return 'hellyea'
-    return "no"
-"""
-
 async def toolsRun(state):
     Agent.debug.logger(state)
     data = Agent.parsejson.parse_response(state["action"])
@@ -129,7 +125,9 @@ async def toolsRun(state):
         content = str(getattr(Agent.tools,func_name)(**data["kwargs"]))
     else:
         content = "ILLEGAL METHOD USED"
-    state["messages"].append({"role": "tool", "content": content, "tool_call_id": func_name})
+    
+
+    state["messages"].append({"role": "system", "content": f"TOOL RESULT:\n{content}", "tool_call_id": func_name})
 
     return {"messages": state["messages"]}
 
@@ -167,15 +165,6 @@ builder.add_conditional_edges(
 
 #builder.add_edge("assistant", "toolget")
 builder.add_edge("toolget", "executioner")
-
-"""builder.add_conditional_edges(
-    "valid",
-    is_valid,{
-        "hellyea" : "executioner",
-        "no" : "assistant"
-    }
-
-)"""
 
 #builder.add_edge("executioner", END)
 
