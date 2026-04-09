@@ -1,4 +1,5 @@
-
+import json
+DebugMode = False
 
 BOLD = "\x1B[1m"
 UNDER = "\x1B[4m"
@@ -23,6 +24,8 @@ FOR_CYN = "\x1B[106m"
 FOR_WHI = "\x1B[107m"
 
 def logger(data):
+    if not DebugMode:
+        return
     print()
     if type(data) is dict:
         print_dict(data)
@@ -32,8 +35,13 @@ def logger(data):
         print(COL_MAG+data+RESET)
     print()
 def checkpoint(data):
+    if not DebugMode:
+        return
+    
     print(COL_GRE+data+RESET)
 def print_dict(dic:dict, level=1):
+    if not DebugMode:
+        return
     print("    "*(level-1) + "{")
     for i in dic.keys():
         if type(dic[i]) is dict:
@@ -45,6 +53,8 @@ def print_dict(dic:dict, level=1):
     print("    "*(level-1) + "}")
 
 def print_list(lis:list, level=1):
+    if not DebugMode:
+        return
     print("    "*(level-1) + "[")
     for i in lis:
         if type(i) is dict:
@@ -54,3 +64,10 @@ def print_list(lis:list, level=1):
         else:
             print("    "*level + COL_MAG +str(i)+RESET + ",")
     print("    "*(level-1) + "]")
+
+def dumplog(state):
+    if not DebugMode:
+        return
+    with open("memory.log", "w") as f:
+        f.write(json.dumps(state, indent=2))
+    

@@ -32,12 +32,13 @@ MODEL_MAP = {
 Agent.debug.checkpoint("MODELS_MAPPED")
 #Streaming text thingy
 
-async def getResp(data, model):
+async def getResp(data, model, debug):
     result = ""
     Agent.debug.checkpoint("GETRESp"+ str(model.get_name))
     Agent.debug.logger(data)
     async for chunk in model.astream(data):
-        print(chunk, end="", flush=True)
+        if debug:
+            print(chunk, end="", flush=True)
         result += chunk
     print()
     return result
@@ -73,18 +74,21 @@ async def assistant(state):
 
     state["messages"].append({
         "role": "system",
-        "content": "You are currently in the ASSISTANT phase."
+        "content": "You are currently in the CHAT MODE."
         })
     
     state["messages"].append({"role": "user", "content": prompt})
 
     
-    res = await getResp(state["messages"], MODEL_MAP["general"])
+    res = await getResp(state["messages"], MODEL_MAP["general"], True)
 
     state["messages"].append({"role": "assistant", "content": res})
 
     Agent.debug.checkpoint("ASSISNTANT")
     #Agent.debug.logger(res)
+
+    Agent.debug.dumplog(state)
+
     return {"result": res, "messages": state["messages"], "error": False}
 
 
@@ -96,11 +100,13 @@ async def toolsToUse(state):
         "role": "system",
         "content": "You are currently in the TOOL_SELECTION phase. here are the available tools: "+ json.dumps(Agent.tools.get_funcs(), indent=2)
         })
-    res = await getResp(state["messages"], MODEL_MAP["system_tool"])
+    res = await getResp(state["messages"], MODEL_MAP["general"], Agent.debug.DebugMode)
 
     res = Agent.parsejson.extract_json(res)
     #state["messages"].append({"role": "system", "content": str(res)})
 
+
+    Agent.debug.dumplog(state)
 
 
     #Agent.debug.logger(res)
@@ -115,10 +121,10 @@ async def toolsRun(state):
     Agent.debug.logger(state)
     data = Agent.parsejson.parse_response(state["action"])
     print(data, type(data))
-    func_name =  data["function_name"]
+    func_name =  data["tool_call_id"]
 
     if func_name == "final":
-        return {"messages": state["checkpoint"]}
+        return {"result":"   END"}
 
     if func_name in Agent.tools.funcs:
         #kwargs = {Agent.tools}
@@ -129,11 +135,15 @@ async def toolsRun(state):
 
     state["messages"].append({"role": "system", "content": f"TOOL RESULT:\n{content}", "tool_call_id": func_name})
 
+
+
+    Agent.debug.dumplog(state)
+
     return {"messages": state["messages"]}
 
 def should_continue(state):
-    with open("memory.log", "w") as f:
-        f.write(json.dumps(state, indent=2))
+    
+    Agent.debug.dumplog(state)
     
     if state["result"].endswith("END"):
         return "end"
@@ -163,10 +173,7 @@ builder.add_conditional_edges(
     }
 )
 
-#builder.add_edge("assistant", "toolget")
 builder.add_edge("toolget", "executioner")
-
-#builder.add_edge("executioner", END)
 
 builder.add_conditional_edges(
     "executioner",
@@ -182,5 +189,14 @@ graph = builder.compile()
 Agent.debug.checkpoint("COMPILED")
 
 # Run
-output = asyncio.run(graph.ainvoke({"input": "tell me what files are there in the directory './'", "role": "user"}))
+output = asyncio.run(graph.ainvoke(
+    {
+        #"input": "tell me what files are there in the directory './'", 
+        "input": "play the playlist Siddharth's Favs", 
+        #"input": "list the files and then open one image you find.", 
+        "role": "user"
+        }
+    )
+)
+
 Agent.debug.print_dict(output)

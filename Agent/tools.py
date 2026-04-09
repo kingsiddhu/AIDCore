@@ -1,8 +1,5 @@
 import os
-if __name__ =="__main__":
-    import debug
-else:
-    import Agent.debug
+import Agent.debug
 
 def list_files(dir_path="./"):
     dirs=os.listdir(dir_path)
@@ -43,12 +40,13 @@ def get_funcs():
         sig = inspect.signature(loc[i])
         all_params = dict(sig.parameters)
         fun = {
-            "function_name" : i,
+            "tool_call_id" : i,
             "kwargs" : {}
         }
         for i in all_params:
             fun["kwargs"][str(i)] = all_params[i].default
         funs_in_tools.append(fun)
+    funs_in_tools.append({"tool_call_id": "final", "kwargs": {}})
     return funs_in_tools
 
 funcs = list(locals().keys())
@@ -68,7 +66,10 @@ except:
     pass
 funcs.remove("__file__")
 funcs.remove("__cached__")
+if "sys" in funcs:
+    funcs.remove("sys")
 funcs.remove("os")
+funcs.remove("subprocess")
 try:
     funcs.remove("debug")
 except:
@@ -83,7 +84,7 @@ except:
     pass
 loc = locals()
 if __name__ == "__main__":
-    import debug, json
+    import json
     print(funcs)
-    print(json.dumps(get_funcs(), indent=4))
-    debug.logger(get_funcs())
+    Agent.debug.logger(json.dumps(get_funcs(), indent=2))
+    
