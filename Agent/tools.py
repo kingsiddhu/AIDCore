@@ -1,8 +1,7 @@
 import os
-if __name__ =="__main__":
-    import debug
-else:
-    import Agent.debug
+import subprocess
+import Agent.debug
+from Agent.toolset.spotify import play_playlist_by_name, play_song, get_playlists, spotify_pause, spotify_resume, next_track, previous_track
 
 def list_files(dir_path="./"):
     dirs=os.listdir(dir_path)
@@ -31,7 +30,11 @@ def write_file(content: str = "",file_path="hello.txt", open_mode = "r"):
     else:
         with open(file_path, open_mode) as f:
             return f.write(content)
-    
+
+def open_photo(image_path:str=""):
+    # Simple execution
+    subprocess.run(["eog", image_path])
+    return f"{image_path} image opened successfully. You are sucessfull in doing so."
 
 
 def get_funcs():
@@ -43,12 +46,13 @@ def get_funcs():
         sig = inspect.signature(loc[i])
         all_params = dict(sig.parameters)
         fun = {
-            "function_name" : i,
+            "tool_call_id" : i,
             "kwargs" : {}
         }
         for i in all_params:
             fun["kwargs"][str(i)] = all_params[i].default
         funs_in_tools.append(fun)
+    funs_in_tools.append({"tool_call_id": "final", "kwargs": {}})
     return funs_in_tools
 
 funcs = list(locals().keys())
@@ -68,7 +72,10 @@ except:
     pass
 funcs.remove("__file__")
 funcs.remove("__cached__")
+if "sys" in funcs:
+    funcs.remove("sys")
 funcs.remove("os")
+funcs.remove("subprocess")
 try:
     funcs.remove("debug")
 except:
@@ -83,7 +90,7 @@ except:
     pass
 loc = locals()
 if __name__ == "__main__":
-    import debug, json
+    import json
     print(funcs)
-    print(json.dumps(get_funcs(), indent=4))
-    debug.logger(get_funcs())
+    Agent.debug.logger(json.dumps(get_funcs(), indent=2))
+    
