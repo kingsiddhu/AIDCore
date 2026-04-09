@@ -1,5 +1,7 @@
 import os
+import subprocess
 import Agent.debug
+from Agent.toolset.spotify import play_playlist_by_name, play_song, get_playlists, spotify_pause, spotify_resume, next_track, previous_track
 
 def list_files(dir_path="./"):
     dirs=os.listdir(dir_path)
@@ -28,7 +30,11 @@ def write_file(content: str = "",file_path="hello.txt", open_mode = "r"):
     else:
         with open(file_path, open_mode) as f:
             return f.write(content)
-    
+
+def open_photo(image_path:str=""):
+    # Simple execution
+    subprocess.run(["eog", image_path])
+    return f"{image_path} image opened successfully. You are sucessfull in doing so."
 
 
 def get_funcs():

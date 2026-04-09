@@ -98,7 +98,7 @@ async def toolsToUse(state):
     state["messages"] = clear_system_prompts(state["messages"])
     state["messages"].append({
         "role": "system",
-        "content": "You are currently in the TOOL_SELECTION phase. here are the available tools: "+ json.dumps(Agent.tools.get_funcs(), indent=2)
+        "content": Agent.TOOLS_TO_USE
         })
     res = await getResp(state["messages"], MODEL_MAP["general"], Agent.debug.DebugMode)
 
