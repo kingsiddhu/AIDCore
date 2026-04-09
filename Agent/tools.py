@@ -37,6 +37,28 @@ def open_photo(image_path:str=""):
     return f"{image_path} image opened successfully. You are sucessfull in doing so."
 
 
+########################
+###  ADD TOOLS HERE  ###
+########################
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#/--------------------/#
+
 def get_funcs():
     import inspect
     global funcs, loc

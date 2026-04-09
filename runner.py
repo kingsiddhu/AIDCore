@@ -5,6 +5,7 @@ import Agent
 import asyncio
 import json
 
+args = Agent.args
 
 # Define state
 class AgentState(TypedDict):
@@ -189,14 +190,28 @@ graph = builder.compile()
 Agent.debug.checkpoint("COMPILED")
 
 # Run
-output = asyncio.run(graph.ainvoke(
-    {
-        #"input": "tell me what files are there in the directory './'", 
-        "input": "play the playlist Siddharth's Favs", 
-        #"input": "list the files and then open one image you find.", 
-        "role": "user"
-        }
+if "--debug" in args:
+    args.remove("--debug")
+
+if "-p" in args:
+    output = asyncio.run(graph.ainvoke(
+        {
+            #"input": "tell me what files are there in the directory './'", 
+            "input": " ".join(args[args.index("-p")+1:]), 
+            #"input": "list the files and then open one image you find.", 
+            "role": "user"
+            }
+        )
     )
-)
+else:
+    output = asyncio.run(graph.ainvoke(
+        {
+            #"input": "tell me what files are there in the directory './'", 
+            "input": "play the playlist Siddharth's Favs", 
+            #"input": "list the files and then open one image you find.", 
+            "role": "user"
+            }
+        )
+    )
 
 Agent.debug.print_dict(output)
