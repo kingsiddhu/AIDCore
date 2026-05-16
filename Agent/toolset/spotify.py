@@ -1,6 +1,7 @@
 import spotipy
 import os
 import subprocess
+import time
 from spotipy.oauth2 import SpotifyOAuth
 import Agent.debug
 
@@ -29,13 +30,13 @@ def play_song(query:str="song"):
         except:
             __restart_spotify()
             sp.start_playback(uris=[uri])
-        return f"Playing: {track['name']} by {track['artists'][0]['name']}"
+        return f"SUCCESS: Playing: {track['name']} by {track['artists'][0]['name']}"
         
     else:
         return "Song not found."
 
 
-def play_playlist_by_name(name:str="playlist"):
+def play_playlist(name:str="playlist"):
     playlists = sp.current_user_playlists(limit=50)
     print(playlists)
 
@@ -46,10 +47,10 @@ def play_playlist_by_name(name:str="playlist"):
             except :
                 __restart_spotify()
                 sp.start_playback(context_uri=playlist["uri"])
-            return f"Playing playlist: {playlist['name']}"
+            return f"SUCCESS: Playing playlist: {playlist['name']}"
 
     return "Playlist not found."
-
+"""
 def get_playlists():
     playlists = []
     results = sp.current_user_playlists(limit=50)
@@ -69,7 +70,7 @@ def get_playlists():
             results = None
 
     return playlists
-
+"""
 def spotify_pause():
     playback = sp.current_playback()
 
@@ -103,6 +104,8 @@ def previous_track():
 def __restart_spotify():
     subprocess.run("pkill spotify", shell=True)
     subprocess.run("spotify &", shell=True)
+    time.sleep(3)
+
 
 # ----------- INPUT HANDLER -----------
 if __name__ =="__main__":

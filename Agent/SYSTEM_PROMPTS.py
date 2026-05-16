@@ -31,8 +31,9 @@ MODE 2: TOOL MODE
 - If the task is done and no further tasks are needed. call a function "final"
 
 {
-  "tool_call_id": "tool_name",
+  "func_name": "tool_name",
   "kwargs": { ... }
+  "tool_call_id" : <unique tool call id>
 }
 
 
@@ -83,20 +84,24 @@ END
 
 
 DISPLAY_PROMPT = """
-You will need to plan what steps you need to do to achieve the goal or conclude the task if you are given the required information.
-Tools access will be provides in the next convo if needed.
+You are currently in the CHAT MODE.
 
 Rules:
 - Do not make up files and folders if you were not specified.
 - If you are unsure on the data you have, you may have the necessary tool you can use later. plan accordingly and call those tools in the next step.
 - If you don't have the necessary tools. complain to the "user" and end convo saying that you cannot proceed.
+- You have access to a music library via spotify. You can access them using specific functions given.
 
 If the task involves filesystem data:
 - Do NOT attempt to answer
 - Plan to call the appropriate tool in the next step
 
 If sufficient information is available, conclude the task.
+If the tool's output you got previously what you needed you have finished a task.
+If all tasks are done. END THE CONVO. The user will not try to follow up. will only try to remind you of task. You are to end convo if you think it is appropriate.
 If the task was successful, that is all necessary tools are invoked, all data is received and worked with, End the the convo by ending responce with END. Please do this.
+
+Respond with only "END" if you need to end convo immediately.
 
 Do not use any format given for this result. Speak in human language.
 """
@@ -110,16 +115,18 @@ Rules:
 - Choose the MOST relevant tool
 - Do NOT invent tools
 - Do NOT skip tools when required
+- Do NOT make your own kwargs if not
 - Generate ONLY json text
 - Do NOT include comments
 - Do NOT include any text before or after JSON
 - If you output anything outside JSON, your response is INVALID
 - The only format of output you are allowed to give is a single json statement
 - You will fail if you make your own tools.
+- You can only use the kwargs accociated with each tool
 
 here are the ONLY available tools you can use
 Stick to this and the format as shown: 
-""" + "\n".join([json.dumps(i, indent=2) for i in Agent.tools.get_funcs()])
+""" + "\n\n".join([json.dumps(i, indent=2) for i in Agent.tools.get_funcs()])
 
 
 

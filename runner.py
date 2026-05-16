@@ -5,6 +5,7 @@ import Agent
 import asyncio
 import json
 
+args = Agent.args
 
 # Define state
 class AgentState(TypedDict):
@@ -74,7 +75,7 @@ async def assistant(state):
 
     state["messages"].append({
         "role": "system",
-        "content": "You are currently in the CHAT MODE."
+        "content": Agent.DISPLAY_PROMPT
         })
     
     state["messages"].append({"role": "user", "content": prompt})
@@ -121,7 +122,8 @@ async def toolsRun(state):
     Agent.debug.logger(state)
     data = Agent.parsejson.parse_response(state["action"])
     print(data, type(data))
-    func_name =  data["tool_call_id"]
+    func_name =  data["func_name"]
+    tool_call_id = data["tool_call_id"]
 
     if func_name == "final":
         return {"result":"   END"}
@@ -133,7 +135,7 @@ async def toolsRun(state):
         content = "ILLEGAL METHOD USED"
     
 
-    state["messages"].append({"role": "system", "content": f"TOOL RESULT:\n{content}", "tool_call_id": func_name})
+    state["messages"].append({"role": "system", "content": f"TOOL RESULT:\n{content}", "tool_call_id": tool_call_id})
 
 
 
@@ -141,7 +143,7 @@ async def toolsRun(state):
 
     return {"messages": state["messages"]}
 
-def should_continue(state):
+async def should_continue(state):
     
     Agent.debug.dumplog(state)
     
@@ -150,7 +152,10 @@ def should_continue(state):
     
     if len(state["messages"]) > 10:
         return "end"
-
+    state["messages"].append({"role":"system", "content": "TASK: if you think the task is done and you got what you needed and have given it to the user, say YES, if not NO, ONLY ONE OF THEM, ONE WORD ONLY"})
+    res = await getResp(state["messages"], MODEL_MAP["system_tool"], True)
+    if "yes" in res.lower():
+        return "end"
     builder.state_schema.error = True
     return "continue"
 # Graph
@@ -189,14 +194,28 @@ graph = builder.compile()
 Agent.debug.checkpoint("COMPILED")
 
 # Run
-output = asyncio.run(graph.ainvoke(
-    {
-        #"input": "tell me what files are there in the directory './'", 
-        "input": "play the playlist Siddharth's Favs", 
-        #"input": "list the files and then open one image you find.", 
-        "role": "user"
-        }
+if "--debug" in args:
+    args.remove("--debug")
+print(__name__)
+if "-p" in args:
+    output = asyncio.run(graph.ainvoke(
+        {
+            #"input": "tell me what files are there in the directory './'", 
+            "input": " ".join(args[args.index("-p")+1:]), 
+            #"input": "list the files and then open one image you find.", 
+            "role": "user"
+            }
+        )
     )
-)
+else:
+    output = asyncio.run(graph.ainvoke(
+        {
+            #"input": "tell me what files are there in the directory './'", 
+            "input": "play the playlist Siddharth's Favs", 
+            #"input": "list the files and then open one image you find.", 
+            "role": "user"
+            }
+        )
+    )
 
 Agent.debug.print_dict(output)

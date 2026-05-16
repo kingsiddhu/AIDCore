@@ -1,0 +1,7 @@
+spotipy==2.26.0
+langchain-ollama==1.1.0
+langgraph==1.1.6
+spotipy==2.26.0
+
+webrtcvad==2.0.10
+sounddevice==0.5.5
